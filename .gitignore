@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# PlatformIO
+.pio
+
+# VSCode
+.vscode
+
+# MacOS
+.DS_Store
