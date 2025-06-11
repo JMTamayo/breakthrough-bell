@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #include "../../config/conf.h"
-#include "leds.h"
+#include "led.h"
 
 namespace leds {
 
