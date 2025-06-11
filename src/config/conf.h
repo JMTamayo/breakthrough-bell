@@ -10,4 +10,7 @@ extern const unsigned long DEFAULT_BAUD_RATE; // Default baud rate for serial
 extern const unsigned int
     BUILTIN_LED_PIN; // Built-in LED pin for microcontroller
 
+extern const unsigned int
+    ACTIVE_BUZZER_PIN; // Active buzzer pin for microcontroller
+
 } // namespace config
