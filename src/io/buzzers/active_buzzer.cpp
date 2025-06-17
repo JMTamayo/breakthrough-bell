@@ -4,9 +4,9 @@
 
 namespace buzzers {
 
-const unsigned long ActiveBuzzer::getPin() const { return this->pin; }
+const unsigned int ActiveBuzzer::getPin() const { return this->pin; }
 
-ActiveBuzzer::ActiveBuzzer(unsigned long pin) : pin(pin) {
+ActiveBuzzer::ActiveBuzzer(unsigned int pin) : pin(pin) {
   pinMode(this->getPin(), OUTPUT);
   digitalWrite(this->getPin(), LOW);
 }
@@ -21,7 +21,7 @@ void ActiveBuzzer::Beep() {
 }
 
 void ActiveBuzzer::AlarmClock() {
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 4; j++) {
       this->Beep();
     }

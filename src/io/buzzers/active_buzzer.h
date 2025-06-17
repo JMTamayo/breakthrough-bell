@@ -5,12 +5,12 @@ namespace buzzers {
 
 class ActiveBuzzer {
 private:
-  const unsigned long pin;
+  const unsigned int pin;
 
-  const unsigned long getPin() const;
+  const unsigned int getPin() const;
 
 public:
-  ActiveBuzzer(unsigned long pin);
+  ActiveBuzzer(unsigned int pin);
 
   ~ActiveBuzzer();
 
