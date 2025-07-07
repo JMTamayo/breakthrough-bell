@@ -12,9 +12,9 @@ namespace controllers {
 enum TimerState {
   TIMER_STATE_PAUSED = 0,
   TIMER_STATE_RUNNING = 1,
-  TIMER_STATE_CONFIG_HOURS = 2,
+  TIMER_STATE_CONFIG_SECONDS = 2,
   TIMER_STATE_CONFIG_MINUTES = 3,
-  TIMER_STATE_CONFIG_SECONDS = 4,
+  TIMER_STATE_CONFIG_HOURS = 4,
 };
 
 class Timer {
@@ -27,10 +27,9 @@ private:
 
   buzzers::ActiveBuzzer *activeBuzzer;
 
-  switches::PushSwitch *runPushSwitch;
-  switches::PushSwitch *modePushSwitch;
-  switches::PushSwitch *upPushSwitch;
-  switches::PushSwitch *downPushSwitch;
+  switches::ControlButton *modeButton;
+  switches::ControlButton *upButton;
+  switches::ControlButton *downButton;
 
   displays::OLED_I2C *display;
 
@@ -56,13 +55,11 @@ private:
 
   buzzers::ActiveBuzzer *getActiveBuzzer() const;
 
-  switches::PushSwitch *getRunPushSwitch() const;
+  switches::ControlButton *getModeButton() const;
 
-  switches::PushSwitch *getModePushSwitch() const;
+  switches::ControlButton *getUpButton() const;
 
-  switches::PushSwitch *getUpPushSwitch() const;
-
-  switches::PushSwitch *getDownPushSwitch() const;
+  switches::ControlButton *getDownButton() const;
 
   displays::OLED_I2C *getDisplay() const;
 
@@ -104,10 +101,8 @@ private:
 
 public:
   Timer(unsigned long durationMs, buzzers::ActiveBuzzer *activeBuzzer,
-        switches::PushSwitch *runPushSwitch,
-        switches::PushSwitch *modePushSwitch,
-        switches::PushSwitch *upPushSwitch,
-        switches::PushSwitch *downPushSwitch, displays::OLED_I2C *display);
+        switches::ControlButton *modeButton, switches::ControlButton *upButton,
+        switches::ControlButton *downButton, displays::OLED_I2C *display);
 
   ~Timer();
 

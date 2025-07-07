@@ -5,7 +5,9 @@
 
 namespace displays {
 
-String OLED_I2C::GetTimeString(unsigned int hours, unsigned int minutes,
+Adafruit_SSD1306 *OLED_I2C::getDisplay() const { return this->display; }
+
+String OLED_I2C::getTimeString(unsigned int hours, unsigned int minutes,
                                unsigned int seconds) {
   String hoursString, minutesString, secondsString, timeString;
 
@@ -36,74 +38,71 @@ OLED_I2C::OLED_I2C(unsigned int width, unsigned int height, int resetPin,
                    unsigned int address) {
   this->display = new Adafruit_SSD1306(width, height, &Wire, resetPin);
 
-  this->display->begin(SSD1306_SWITCHCAPVCC, address);
+  this->getDisplay()->begin(SSD1306_SWITCHCAPVCC, address);
 }
 
 OLED_I2C::~OLED_I2C() {}
 
-void OLED_I2C::MainScreen() {
-  this->display->clearDisplay();
+void OLED_I2C::HomeScreen() {
+  this->getDisplay()->clearDisplay();
 
-  this->display->setTextSize(1);
-  this->display->setTextColor(SSD1306_WHITE);
-  this->display->setCursor(0, 0);
-  this->display->println("Breakthrough");
+  this->getDisplay()->setTextSize(1);
+  this->getDisplay()->setTextColor(SSD1306_WHITE);
+  this->getDisplay()->setCursor(0, 0);
+  this->getDisplay()->println("Breakthrough");
 
-  this->display->setTextSize(2);
-  this->display->setCursor(0, 10);
-  this->display->println("Bell");
+  this->getDisplay()->setTextSize(3);
+  this->getDisplay()->setCursor(0, 10);
+  this->getDisplay()->println("Bell");
 
-  this->display->setTextSize(1);
-  this->display->setCursor(62, 24);
-  this->display->println("by JMTamayo");
-
-  this->display->display();
+  this->getDisplay()->display();
+  delay(3000);
 }
 
 void OLED_I2C::DisplayTime(String header, unsigned int hours,
                            unsigned int minutes, unsigned int seconds) {
 
-  this->display->clearDisplay();
+  this->getDisplay()->clearDisplay();
 
-  this->display->setTextSize(1);
-  this->display->setTextColor(SSD1306_WHITE);
-  this->display->setCursor(0, 0);
-  this->display->println(header);
+  this->getDisplay()->setTextSize(1);
+  this->getDisplay()->setTextColor(SSD1306_WHITE);
+  this->getDisplay()->setCursor(0, 0);
+  this->getDisplay()->println(header);
 
-  String timeString = this->GetTimeString(hours, minutes, seconds);
+  String timeString = this->getTimeString(hours, minutes, seconds);
 
-  this->display->setTextSize(2);
-  this->display->setTextColor(SSD1306_WHITE);
-  this->display->setCursor(18, 13);
-  this->display->println(timeString);
+  this->getDisplay()->setTextSize(2);
+  this->getDisplay()->setTextColor(SSD1306_WHITE);
+  this->getDisplay()->setCursor(18, 13);
+  this->getDisplay()->println(timeString);
 
-  this->display->display();
+  this->getDisplay()->display();
 }
 
 void OLED_I2C::DisplayError(String error) {
-  this->display->clearDisplay();
+  this->getDisplay()->clearDisplay();
 
-  this->display->setTextSize(1);
-  this->display->setTextColor(SSD1306_WHITE);
-  this->display->setCursor(0, 0);
-  this->display->println("Error");
+  this->getDisplay()->setTextSize(1);
+  this->getDisplay()->setTextColor(SSD1306_WHITE);
+  this->getDisplay()->setCursor(0, 0);
+  this->getDisplay()->println("Error");
 
-  this->display->setTextSize(1);
-  this->display->setCursor(0, 9);
-  this->display->println(error);
+  this->getDisplay()->setTextSize(1);
+  this->getDisplay()->setCursor(0, 9);
+  this->getDisplay()->println(error);
 
-  this->display->display();
+  this->getDisplay()->display();
 }
 
 void OLED_I2C::DisplayTimesUp() {
-  this->display->clearDisplay();
+  this->getDisplay()->clearDisplay();
 
-  this->display->setTextSize(2);
-  this->display->setTextColor(SSD1306_WHITE);
-  this->display->setCursor(8, 9);
-  this->display->println("Time's Up!");
+  this->getDisplay()->setTextSize(2);
+  this->getDisplay()->setTextColor(SSD1306_WHITE);
+  this->getDisplay()->setCursor(8, 9);
+  this->getDisplay()->println("Time's Up!");
 
-  this->display->display();
+  this->getDisplay()->display();
 }
 
 } // namespace displays

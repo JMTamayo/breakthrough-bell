@@ -11,8 +11,10 @@ class OLED_I2C {
 private:
   Adafruit_SSD1306 *display;
 
-  String GetTimeString(unsigned int hours, unsigned int minutes,
+  String getTimeString(unsigned int hours, unsigned int minutes,
                        unsigned int seconds);
+
+  Adafruit_SSD1306 *getDisplay() const;
 
 public:
   OLED_I2C(unsigned int width, unsigned int height, int resetPin,
@@ -20,7 +22,7 @@ public:
 
   ~OLED_I2C();
 
-  void MainScreen();
+  void HomeScreen();
 
   void DisplayTime(String header, unsigned int hours, unsigned int minutes,
                    unsigned int seconds);
