@@ -13,10 +13,9 @@ buzzers::ActiveBuzzer *activeBuzzer;
 
 displays::OLED_I2C *oledDisplay;
 
-switches::PushSwitch *runPushSwitch;
-switches::PushSwitch *modePushSwitch;
-switches::PushSwitch *upPushSwitch;
-switches::PushSwitch *downPushSwitch;
+switches::ControlButton *modeButton;
+switches::ControlButton *upButton;
+switches::ControlButton *downButton;
 
 controllers::Timer *timer;
 
@@ -30,19 +29,26 @@ void setup() {
       config::OLED_DISPLAY_WIDTH, config::OLED_DISPLAY_HEIGHT,
       config::OLED_DISPLAY_RESET_PIN, config::OLED_DISPLAY_ADDRESS);
 
-  runPushSwitch = new switches::PushSwitch(config::PUSH_SWITCH_RUN_PIN);
-  modePushSwitch = new switches::PushSwitch(config::PUSH_SWITCH_MODE_PIN);
-  upPushSwitch = new switches::PushSwitch(config::PUSH_SWITCH_UP_PIN);
-  downPushSwitch = new switches::PushSwitch(config::PUSH_SWITCH_DOWN_PIN);
+  modeButton = new switches::ControlButton(
+      config::PUSH_SWITCH_CONTROL_PIN, config::CONTROL_BUTTON_DEBOUNCE_DELAY_MS,
+      config::CONTROL_BUTTON_HELD_THRESHOLD_MS);
 
-  timer = new controllers::Timer(config::DEFAULT_TIMER_DURATION_MS,
-                                 activeBuzzer, runPushSwitch, modePushSwitch,
-                                 upPushSwitch, downPushSwitch, oledDisplay);
+  upButton = new switches::ControlButton(
+      config::PUSH_SWITCH_UP_PIN, config::CONTROL_BUTTON_DEBOUNCE_DELAY_MS,
+      config::CONTROL_BUTTON_HELD_THRESHOLD_MS);
 
-  oledDisplay->MainScreen();
-  delay(3000);
+  downButton = new switches::ControlButton(
+      config::PUSH_SWITCH_DOWN_PIN, config::CONTROL_BUTTON_DEBOUNCE_DELAY_MS,
+      config::CONTROL_BUTTON_HELD_THRESHOLD_MS);
+
+  timer =
+      new controllers::Timer(config::DEFAULT_TIMER_DURATION_MS, activeBuzzer,
+                             modeButton, upButton, downButton, oledDisplay);
 
   logging::logger->Info("System initialized successfully");
+
+  oledDisplay->HomeScreen();
+  modeButton->RestartTime();
 }
 
 void loop() { timer->Do(); }

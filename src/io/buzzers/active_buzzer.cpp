@@ -21,7 +21,7 @@ void ActiveBuzzer::Beep() {
 }
 
 void ActiveBuzzer::AlarmClock() {
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 5; i++) {
     for (int j = 0; j < 4; j++) {
       this->Beep();
     }

@@ -20,12 +20,12 @@ String Timer::getStateString() const {
     return "Paused";
   case TIMER_STATE_RUNNING:
     return "Running";
-  case TIMER_STATE_CONFIG_HOURS:
-    return "Config: Hours";
-  case TIMER_STATE_CONFIG_MINUTES:
-    return "Config: Minutes";
   case TIMER_STATE_CONFIG_SECONDS:
     return "Config: Seconds";
+  case TIMER_STATE_CONFIG_MINUTES:
+    return "Config: Minutes";
+  case TIMER_STATE_CONFIG_HOURS:
+    return "Config: Hours";
   default:
     return "Unknown";
   }
@@ -70,20 +70,14 @@ buzzers::ActiveBuzzer *Timer::getActiveBuzzer() const {
   return this->activeBuzzer;
 }
 
-switches::PushSwitch *Timer::getRunPushSwitch() const {
-  return this->runPushSwitch;
+switches::ControlButton *Timer::getModeButton() const {
+  return this->modeButton;
 }
 
-switches::PushSwitch *Timer::getModePushSwitch() const {
-  return this->modePushSwitch;
-}
+switches::ControlButton *Timer::getUpButton() const { return this->upButton; }
 
-switches::PushSwitch *Timer::getUpPushSwitch() const {
-  return this->upPushSwitch;
-}
-
-switches::PushSwitch *Timer::getDownPushSwitch() const {
-  return this->downPushSwitch;
+switches::ControlButton *Timer::getDownButton() const {
+  return this->downButton;
 }
 
 displays::OLED_I2C *Timer::getDisplay() const { return this->display; }
@@ -124,8 +118,6 @@ void Timer::increaseOneHour() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::decreaseOneHour() {
@@ -148,8 +140,6 @@ void Timer::decreaseOneHour() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::increaseOneMinute() {
@@ -172,8 +162,6 @@ void Timer::increaseOneMinute() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::decreaseOneMinute() {
@@ -196,8 +184,6 @@ void Timer::decreaseOneMinute() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::increaseOneSecond() {
@@ -220,8 +206,6 @@ void Timer::increaseOneSecond() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::decreaseOneSecond() {
@@ -244,8 +228,6 @@ void Timer::decreaseOneSecond() {
 
   this->setRemainingTimeMs(newTime);
   this->setDurationMs(newTime);
-
-  delay(100);
 }
 
 void Timer::reset() {
@@ -258,17 +240,13 @@ void Timer::reset() {
 void Timer::restart() {
   logging::logger->Info("Restarting timer");
 
-  this->setRemainingTimeMs(this->getDurationMs());
-
   this->getActiveBuzzer()->AlarmClock();
 
   this->setState(TIMER_STATE_PAUSED);
-}
+  this->setRemainingTimeMs(this->getDurationMs());
 
-void Timer::await() {
-  logging::logger->Info("Pausing timer");
-
-  this->setState(TIMER_STATE_PAUSED);
+  this->getModeButton()->RestartTime();
+  this->setUpdatedAtMs(millis());
 }
 
 void Timer::run() {
@@ -279,136 +257,180 @@ void Timer::run() {
   this->setState(TIMER_STATE_RUNNING);
 }
 
+void Timer::await() {
+  logging::logger->Info("Pausing timer");
+  this->setState(TIMER_STATE_PAUSED);
+}
+
 void Timer::configSeconds() {
+  logging::logger->Info("Configuring timer in seconds");
   this->setState(TIMER_STATE_CONFIG_SECONDS);
-  this->getActiveBuzzer()->Beep();
-  delay(100);
 }
 
 void Timer::configMinutes() {
+  logging::logger->Info("Configuring timer in minutes");
   this->setState(TIMER_STATE_CONFIG_MINUTES);
-  this->getActiveBuzzer()->Beep();
-  delay(100);
 }
 
 void Timer::configHours() {
+  logging::logger->Info("Configuring timer in hours");
   this->setState(TIMER_STATE_CONFIG_HOURS);
-  this->getActiveBuzzer()->Beep();
-  delay(100);
 }
 
 void Timer::fatalError(const char *message) {
   logging::logger->Error(message);
+
+  this->getDisplay()->DisplayError(String(message));
 
   delay(5000);
   this->reset();
 }
 
 Timer::Timer(unsigned long durationMs, buzzers::ActiveBuzzer *activeBuzzer,
-             switches::PushSwitch *runPushSwitch,
-             switches::PushSwitch *modePushSwitch,
-             switches::PushSwitch *upPushSwitch,
-             switches::PushSwitch *downPushSwitch, displays::OLED_I2C *display)
+             switches::ControlButton *modeButton,
+             switches::ControlButton *upButton,
+             switches::ControlButton *downButton, displays::OLED_I2C *display)
     : state(TIMER_STATE_PAUSED), durationMs(durationMs),
       remainingTimeMs(durationMs), updatedAtMs(0), activeBuzzer(activeBuzzer),
-      runPushSwitch(runPushSwitch), modePushSwitch(modePushSwitch),
-      upPushSwitch(upPushSwitch), downPushSwitch(downPushSwitch),
+      modeButton(modeButton), upButton(upButton), downButton(downButton),
       display(display) {}
 
 Timer::~Timer() {}
 
 void Timer::Do() {
-  TimerState currentState = this->getState();
+  switches::ControlButtonStatus controlButtonStatus =
+      this->getModeButton()->GetStatus();
+  switches::ControlButtonStatus upButtonStatus =
+      this->getUpButton()->GetStatus();
+  switches::ControlButtonStatus downButtonStatus =
+      this->getDownButton()->GetStatus();
 
-  logging::logger->Info("Current timer state: " + String(currentState));
+  TimerState timerState = this->getState();
 
-  switch (currentState) {
+  logging::logger->Info("Current timer state: " + String(timerState));
+  logging::logger->Info("Current control button state: " +
+                        String(controlButtonStatus));
+
+  switch (timerState) {
   case TIMER_STATE_PAUSED:
-    if (this->getRunPushSwitch()->IsPressed()) {
+    switch (controlButtonStatus) {
+    case switches::CONTROL_BUTTON_PRESSED:
       this->setUpdatedAtMs(millis());
       this->run();
-    } else if (this->getModePushSwitch()->IsPressed()) {
+      break;
+
+    case switches::CONTROL_BUTTON_HELD:
       this->configSeconds();
+      break;
+
+    default:
+      logging::logger->Debug("Control button not handled: Timer still paused");
     }
 
     break;
 
   case TIMER_STATE_RUNNING:
-    if (this->getModePushSwitch()->IsPressed()) {
-      this->await();
-      this->getActiveBuzzer()->Beep();
-
-    } else if (this->getRemainingTimeMs() == 0) {
+    if (this->getRemainingTimeMs() == 0) {
       this->getDisplay()->DisplayTimesUp();
       this->restart();
+      break;
+    }
 
-    } else {
+    switch (controlButtonStatus) {
+    case switches::CONTROL_BUTTON_PRESSED:
+      this->await();
+      break;
+
+    case switches::CONTROL_BUTTON_HELD:
+      this->await();
+      break;
+
+    default:
       this->run();
     }
 
     break;
 
   case TIMER_STATE_CONFIG_SECONDS:
-    if (this->getRunPushSwitch()->IsPressed()) {
-      this->setUpdatedAtMs(millis());
-      this->run();
-
-    } else if (this->getModePushSwitch()->IsPressed()) {
+    switch (controlButtonStatus) {
+    case switches::CONTROL_BUTTON_PRESSED:
       this->configMinutes();
+      break;
 
-    } else if (this->getUpPushSwitch()->IsPressed() &&
-               !this->getDownPushSwitch()->IsPressed()) {
-      this->increaseOneSecond();
+    case switches::CONTROL_BUTTON_HELD:
+      this->await();
+      break;
 
-    } else if (this->getDownPushSwitch()->IsPressed() &&
-               !this->getUpPushSwitch()->IsPressed()) {
-      this->decreaseOneSecond();
+    default:
+      logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneSecond();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneSecond();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
 
   case TIMER_STATE_CONFIG_MINUTES:
-    if (this->getRunPushSwitch()->IsPressed()) {
-      this->setUpdatedAtMs(millis());
-      this->run();
-
-    } else if (this->getModePushSwitch()->IsPressed()) {
+    switch (controlButtonStatus) {
+    case switches::CONTROL_BUTTON_PRESSED:
       this->configHours();
+      break;
 
-    } else if (this->getUpPushSwitch()->IsPressed() &&
-               !this->getDownPushSwitch()->IsPressed()) {
-      this->increaseOneMinute();
+    case switches::CONTROL_BUTTON_HELD:
+      this->await();
+      break;
 
-    } else if (this->getDownPushSwitch()->IsPressed() &&
-               !this->getUpPushSwitch()->IsPressed()) {
-      this->decreaseOneMinute();
+    default:
+      logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneMinute();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneMinute();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
 
   case TIMER_STATE_CONFIG_HOURS:
-    if (this->getRunPushSwitch()->IsPressed()) {
-      this->setUpdatedAtMs(millis());
-      this->run();
-
-    } else if (this->getModePushSwitch()->IsPressed()) {
+    switch (controlButtonStatus) {
+    case switches::CONTROL_BUTTON_PRESSED:
       this->configSeconds();
+      break;
 
-    } else if (this->getUpPushSwitch()->IsPressed() &&
-               !this->getDownPushSwitch()->IsPressed()) {
-      this->increaseOneHour();
+    case switches::CONTROL_BUTTON_HELD:
+      this->await();
+      break;
 
-    } else if (this->getDownPushSwitch()->IsPressed() &&
-               !this->getUpPushSwitch()->IsPressed()) {
-      this->decreaseOneHour();
+    default:
+      logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneHour();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneHour();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
 
   default:
-    this->fatalError("Timer state not supported");
-
-    break;
+    this->fatalError("Unknown timer state");
   }
 
   this->getDisplay()->DisplayTime(this->getStateString(), this->getHours(),
