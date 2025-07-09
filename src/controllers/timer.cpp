@@ -240,18 +240,23 @@ void Timer::reset() {
 void Timer::restart() {
   logging::logger->Info("Restarting timer");
 
-  this->setRemainingTimeMs(this->getDurationMs());
   this->getActiveBuzzer()->AlarmClock();
-  this->setState(TIMER_STATE_PAUSED);
 
+  this->setState(TIMER_STATE_PAUSED);
+  this->setRemainingTimeMs(this->getDurationMs());
+
+  this->getModeButton()->RestartTime();
   this->setUpdatedAtMs(millis());
 }
 
 void Timer::await() {
   logging::logger->Info("Pausing timer");
 
-  this->setState(TIMER_STATE_PAUSED);
   this->getActiveBuzzer()->Beep();
+
+  this->setState(TIMER_STATE_PAUSED);
+
+  this->getModeButton()->RestartTime();
 }
 
 void Timer::run() {
@@ -265,22 +270,31 @@ void Timer::run() {
 void Timer::configSeconds() {
   logging::logger->Info("Configuring timer in seconds");
 
-  this->setState(TIMER_STATE_CONFIG_SECONDS);
   this->getActiveBuzzer()->Beep();
+
+  this->setState(TIMER_STATE_CONFIG_SECONDS);
+
+  this->getModeButton()->RestartTime();
 }
 
 void Timer::configMinutes() {
   logging::logger->Info("Configuring timer in minutes");
 
-  this->setState(TIMER_STATE_CONFIG_MINUTES);
   this->getActiveBuzzer()->Beep();
+
+  this->setState(TIMER_STATE_CONFIG_MINUTES);
+
+  this->getModeButton()->RestartTime();
 }
 
 void Timer::configHours() {
   logging::logger->Info("Configuring timer in hours");
 
-  this->setState(TIMER_STATE_CONFIG_HOURS);
   this->getActiveBuzzer()->Beep();
+
+  this->setState(TIMER_STATE_CONFIG_HOURS);
+
+  this->getModeButton()->RestartTime();
 }
 
 void Timer::fatalError(const char *message) {
@@ -404,8 +418,13 @@ void Timer::Do() {
     this->fatalError("Unknown timer state");
   }
 
-  this->getDisplay()->DisplayTime(this->getStateString(), this->getHours(),
-                                  this->getMinutes(), this->getSeconds());
+  if (this->getRemainingTimeMs() == 0) {
+    this->getDisplay()->DisplayTimesUp();
+    this->restart();
+  } else {
+    this->getDisplay()->DisplayTime(this->getStateString(), this->getHours(),
+                                    this->getMinutes(), this->getSeconds());
+  }
 }
 
 } // namespace controllers
