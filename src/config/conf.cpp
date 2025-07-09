@@ -12,7 +12,7 @@ const unsigned int PUSH_SWITCH_UP_PIN = 2;
 
 const unsigned int PUSH_SWITCH_DOWN_PIN = 3;
 
-const unsigned long DEFAULT_TIMER_DURATION_MS = 5000;
+const unsigned long DEFAULT_TIMER_DURATION_MS = 0;
 
 const unsigned int OLED_DISPLAY_WIDTH = 128;
 
