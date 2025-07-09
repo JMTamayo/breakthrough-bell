@@ -87,9 +87,9 @@ private:
 
   void restart();
 
-  void await();
-
   void run();
+
+  void await();
 
   void configSeconds();
 

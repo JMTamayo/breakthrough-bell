@@ -249,16 +249,6 @@ void Timer::restart() {
   this->setUpdatedAtMs(millis());
 }
 
-void Timer::await() {
-  logging::logger->Info("Pausing timer");
-
-  this->getActiveBuzzer()->Beep();
-
-  this->setState(TIMER_STATE_PAUSED);
-
-  this->getModeButton()->RestartTime();
-}
-
 void Timer::run() {
   logging::logger->Info(
       "Remaining time: " + String(this->getRemainingTimeMs()) + " ms");
@@ -267,34 +257,24 @@ void Timer::run() {
   this->setState(TIMER_STATE_RUNNING);
 }
 
+void Timer::await() {
+  logging::logger->Info("Pausing timer");
+  this->setState(TIMER_STATE_PAUSED);
+}
+
 void Timer::configSeconds() {
   logging::logger->Info("Configuring timer in seconds");
-
-  this->getActiveBuzzer()->Beep();
-
   this->setState(TIMER_STATE_CONFIG_SECONDS);
-
-  this->getModeButton()->RestartTime();
 }
 
 void Timer::configMinutes() {
   logging::logger->Info("Configuring timer in minutes");
-
-  this->getActiveBuzzer()->Beep();
-
   this->setState(TIMER_STATE_CONFIG_MINUTES);
-
-  this->getModeButton()->RestartTime();
 }
 
 void Timer::configHours() {
   logging::logger->Info("Configuring timer in hours");
-
-  this->getActiveBuzzer()->Beep();
-
   this->setState(TIMER_STATE_CONFIG_HOURS);
-
-  this->getModeButton()->RestartTime();
 }
 
 void Timer::fatalError(const char *message) {
@@ -318,18 +298,22 @@ Timer::Timer(unsigned long durationMs, buzzers::ActiveBuzzer *activeBuzzer,
 Timer::~Timer() {}
 
 void Timer::Do() {
-  switches::ControlButtonStatus modeButtonStatus =
+  switches::ControlButtonStatus controlButtonStatus =
       this->getModeButton()->GetStatus();
+  switches::ControlButtonStatus upButtonStatus =
+      this->getUpButton()->GetStatus();
+  switches::ControlButtonStatus downButtonStatus =
+      this->getDownButton()->GetStatus();
 
   TimerState timerState = this->getState();
 
   logging::logger->Info("Current timer state: " + String(timerState));
   logging::logger->Info("Current control button state: " +
-                        String(modeButtonStatus));
+                        String(controlButtonStatus));
 
   switch (timerState) {
   case TIMER_STATE_PAUSED:
-    switch (modeButtonStatus) {
+    switch (controlButtonStatus) {
     case switches::CONTROL_BUTTON_PRESSED:
       this->setUpdatedAtMs(millis());
       this->run();
@@ -349,9 +333,10 @@ void Timer::Do() {
     if (this->getRemainingTimeMs() == 0) {
       this->getDisplay()->DisplayTimesUp();
       this->restart();
+      break;
     }
 
-    switch (modeButtonStatus) {
+    switch (controlButtonStatus) {
     case switches::CONTROL_BUTTON_PRESSED:
       this->await();
       break;
@@ -367,7 +352,7 @@ void Timer::Do() {
     break;
 
   case TIMER_STATE_CONFIG_SECONDS:
-    switch (modeButtonStatus) {
+    switch (controlButtonStatus) {
     case switches::CONTROL_BUTTON_PRESSED:
       this->configMinutes();
       break;
@@ -378,12 +363,22 @@ void Timer::Do() {
 
     default:
       logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneSecond();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneSecond();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
 
   case TIMER_STATE_CONFIG_MINUTES:
-    switch (modeButtonStatus) {
+    switch (controlButtonStatus) {
     case switches::CONTROL_BUTTON_PRESSED:
       this->configHours();
       break;
@@ -394,12 +389,22 @@ void Timer::Do() {
 
     default:
       logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneMinute();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneMinute();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
 
   case TIMER_STATE_CONFIG_HOURS:
-    switch (modeButtonStatus) {
+    switch (controlButtonStatus) {
     case switches::CONTROL_BUTTON_PRESSED:
       this->configSeconds();
       break;
@@ -410,6 +415,16 @@ void Timer::Do() {
 
     default:
       logging::logger->Debug("Control button state not handled");
+
+      if (upButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED &&
+          downButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->increaseOneHour();
+      } else if (upButtonStatus == switches::CONTROL_BUTTON_NOT_PRESSED &&
+                 downButtonStatus != switches::CONTROL_BUTTON_NOT_PRESSED) {
+        this->decreaseOneHour();
+      } else {
+        logging::logger->Debug("Config buttons not handled");
+      }
     }
 
     break;
@@ -418,13 +433,8 @@ void Timer::Do() {
     this->fatalError("Unknown timer state");
   }
 
-  if (this->getRemainingTimeMs() == 0) {
-    this->getDisplay()->DisplayTimesUp();
-    this->restart();
-  } else {
-    this->getDisplay()->DisplayTime(this->getStateString(), this->getHours(),
-                                    this->getMinutes(), this->getSeconds());
-  }
+  this->getDisplay()->DisplayTime(this->getStateString(), this->getHours(),
+                                  this->getMinutes(), this->getSeconds());
 }
 
 } // namespace controllers
