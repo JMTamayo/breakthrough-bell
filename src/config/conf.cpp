@@ -22,8 +22,8 @@ const unsigned int OLED_DISPLAY_ADDRESS = 0x3C;
 
 const int OLED_DISPLAY_RESET_PIN = -1;
 
-const long CONTROL_BUTTON_DEBOUNCE_DELAY_MS = 100;
+const long CONTROL_BUTTON_DEBOUNCE_DELAY_MS = 80;
 
-const long CONTROL_BUTTON_HELD_THRESHOLD_MS = 1000;
+const long CONTROL_BUTTON_HELD_THRESHOLD_MS = 300;
 
 } // namespace config

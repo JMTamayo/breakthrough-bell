@@ -59,13 +59,7 @@ ControlButtonStatus ControlButton::GetStatus() {
     this->RestartTime();
 
   } else {
-    if (timeSincePressedMs >= this->getHeldThresholdMs()) {
-      status = CONTROL_BUTTON_HELD;
-      this->RestartTime();
-
-    } else {
-      status = CONTROL_BUTTON_NOT_PRESSED;
-    }
+    status = CONTROL_BUTTON_NOT_PRESSED;
   }
 
   return status;

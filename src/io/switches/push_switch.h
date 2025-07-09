@@ -34,7 +34,6 @@ private:
   const unsigned long getHeldThresholdMs() const;
 
   unsigned long getUpdatedAtMs() const;
-  void setStatus(ControlButtonStatus status);
 
 public:
   ControlButton(unsigned int pin, unsigned long debounceDelayMs,
